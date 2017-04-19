@@ -1,0 +1,143 @@
+# -*- coding: utf-8 -*-
+
+from openerp import models, fields, api
+from openerp.tools import amount_to_text_en
+import locale
+
+
+class bee_choo_product_custom_fields(models.Model):
+    _inherit = "product.template"
+
+    country_of_origin = fields.Many2one(comodel_name="res.country", string="Country of Origin", required=False)
+    hs_code = fields.Char(string="HS Code", required=False)
+    notification_no = fields.Char(string="Notification Number", required=False)
+    optimum_no = fields.Char(string="Optimum Number", required=False)
+    packing_size = fields.Char(string="Packing Size")
+
+
+class PurchaseOrder(models.Model):
+    _inherit = 'purchase.order'
+
+    attention = fields.Char(string="Attention")
+    attn_tel = fields.Char(string="Tel")
+    attn_email = fields.Char(string="Email")
+    prepared_by = fields.Char(string="Prepared By")
+
+    amount_to_text = fields.Char(compute='_amount_in_words', string='In Words', help="The amount in words")
+
+    @api.depends('amount_total')
+    @api.one
+    def _amount_in_words(self):
+        if self.partner_id.lang == 'en_US':
+            self.amount_to_text = amount_to_text_en.amount_to_text(nbr=self.amount_total,
+                                                                   currency=self.pricelist_id.currency_id.name)
+PurchaseOrder()
+
+
+class SaleOrder(models.Model):
+    _inherit = 'sale.order'
+    
+    attention = fields.Char(string="Attention")
+    attn_tel = fields.Char(string="Tel")
+    amount_to_text = fields.Char(compute='_amount_in_words', string='In Words', help="The amount in words")
+
+    @api.depends('amount_total')
+    @api.one
+    def _amount_in_words(self):
+        if self.partner_id.lang == 'en_US':
+            self.amount_to_text = amount_to_text_en.amount_to_text(nbr=self.amount_total,
+                                                                   currency=self.pricelist_id.currency_id.name)
+
+SaleOrder()
+
+class CustomAccountInvoice(models.Model):
+    _inherit = 'account.invoice'
+
+    attention = fields.Char(string="Attention")
+    attn_tel = fields.Char(string="Tel")
+    prepared_by = fields.Char(string="Prepared By")
+
+    amount_to_text = fields.Char(compute='_amount_in_words', string='In Words', help="The amount in words")
+
+    @api.depends('amount_total')
+    @api.one
+    def _amount_in_words(self):
+        if self.partner_id.lang == 'en_US':
+            self.amount_to_text = amount_to_text_en.amount_to_text(nbr=self.amount_total,
+                                                                   currency=self.currency_id.name)
+
+CustomAccountInvoice()
+
+class PickingQuantity(models.Model):
+
+   _inherit = 'stock.move'
+   
+   do_quantity = fields.Float(string='Quantity',
+                               store=True,
+                               related='product_uos_qty')
+
+
+class StockPicking(models.Model):
+    _inherit = 'stock.picking'
+
+    @api.depends('move_lines.do_quantity')
+    def _total_qty(self):
+        currentqty = 0
+        for move_line in self.move_lines:
+            currentqty = currentqty + move_line.do_quantity
+
+        self.qty_total = currentqty
+
+    qty_total = fields.Float(compute='_total_qty', string='Total Quantity')
+
+    order_ids = fields.One2many('sale.order', string='Orders', compute='_get_order_ids')
+    payment_term = fields.Many2one('account.payment.term', string='Payment Term', compute='_get_payment_term')
+    attention = fields.Char(string="Attention")
+    attn_tel = fields.Char(string="Tel")
+    issued_by = fields.Char(string="Issued By")
+
+    @api.one
+    def _get_order_ids(self):
+        if self.group_id and self.group_id.id:
+            self.order_ids = self.env['sale.order'].search([('procurement_group_id', '=', self.group_id.id)])
+
+    @api.one
+    def _get_payment_term(self):
+        for order in self.order_ids:
+            self.payment_term = order.payment_term
+
+StockPicking()
+
+class ResPartner(models.Model):
+    _inherit = 'res.partner'
+    
+    @api.multi
+    def amt_frmt(self, amount):
+        print "\n\n**** method called"
+        amt = locale.format("%d", float(amount), grouping=True)
+        return amt
+
+
+# class PurchaseWeightOrder(models.Model):
+  
+#     _inherit = 'purchase.order'
+#     @api.depends('order_line.po_weight')
+#     @api.depends('order_line.po_net_weight')
+#     @api.depends('order_line.po_quantity')
+#     def _calcweight(self):
+#         currentweight = 0
+#         for order_line in self.order_line:
+#             currentweight = currentweight + (order_line.po_weight * order_line.po_quantity)
+
+#         self.po_weight_total = currentweight
+
+#     po_weight_total = fields.Float(compute='_calcweight', string='Total Gross Weight')
+
+#     def _calcweight_net(self):
+#         currentweight_net = 0
+#         for order_line in self.order_line:
+#             currentweight_net = currentweight_net + (order_line.po_net_weight * order_line.po_quantity)
+
+#         self.po_net_weight_total = currentweight_net
+
+#     po_net_weight_total = fields.Float(compute='_calcweight_net', string='Total Net Weight')

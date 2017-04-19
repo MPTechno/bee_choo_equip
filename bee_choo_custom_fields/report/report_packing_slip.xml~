@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+        <template id="packing_slip">
+            <t t-call="report.html_container">
+                <t t-foreach="doc_ids" t-as="doc_id">
+                    <t t-raw="translate_doc(doc_id, doc_model, 'partner_id.lang', 'bee_choo_custom_fields.report_packing_slip')"/>
+                </t>
+            </t>
+        </template>
+        <template id="report_packing_slip">
+            <xpath expr="//t[@t-call='report.external_layout']" position="replace">
+                <t t-call="bee_choo_custom_fields.external_packing_slip_layout">
+                    <t t-set="o" t-value="o.with_context({'lang':o.partner_id.lang})"/>
+                    <div class="page">
+                        <strong><hr style="border:0.5px solid black;" size="5"></hr></strong>
+                        <div style="text-align:center;font-size: 20px;border-top:1px solid black;border-bottom:1px solid black;">
+                            <strong>PACKING LIST</strong>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-6 pull-left">
+                                <table class="table1 table-condensed"
+                                       style=" width:100%;">
+                                    <tr>
+                                        <td colspan="6" style="font-size:12px;">
+                                            <strong>BILL TO :</strong>
+                                            <address t-field="o.partner_id"
+                                                     t-field-options="{&quot;widget&quot;: &quot;contact&quot;, &quot;fields&quot;: [&quot;address&quot;, &quot;name&quot;], &quot;no_marker&quot;: true}"/>
+                                            <span t-if="o.partner_id.vat">TIN:
+                                                <span t-field="o.partner_id.vat"/>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr></tr>
+                                    <tr style="font-size:12px;">
+                                        <td align="left">
+                                            <strong>ATTENTION :</strong>
+                                        </td>
+                                        <td align="left">
+                                            <span t-if="o.partner_id.user_id" t-field="o.partner_id.user_id.name"></span>
+                                        </td>
+                                        <td></td>
+                                        <td></td>
+                                        <td align="left">
+                                            <strong>TEL :</strong>
+                                        </td>
+                                        <td align="left">
+                                            <span t-if="o.partner_id.phone" t-field="o.partner_id.phone"></span>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+
+                            <div class="col-xs-6 pull-right">
+                                <table class="table1 table-condensed"
+                                       style=" width:100%;  max-height: 250px;font-size: 12px;">
+                                    <tr>
+                                        <th>D.O NO</th>
+                                        <td>
+                                            :
+                                            <span t-field="o.name"/>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>DATE</th>
+                                        <td>
+                                            :
+                                            <span t-field="o.date_order"/>
+                                        </td>
+                                    </tr>
+                                    <!--tr>
+                                        <th>DELIVERY ORDER</th>
+                                        <td>
+                                            :
+                                            <span t-field="o.min_date"/>
+                                        </td>
+                                    </tr-->
+                                    <tr>
+                                        <th>PAGE NO.</th>
+                                        <td>
+                                            :
+                                            <t t-set="nbr_page" t-value="0"/>
+                                            <t t-set="compteur" t-value="nbr_page+1"/>
+                                            <t t-esc="compteur"/>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>PAYMENT TERM</th>
+                                        <td>
+                                            :
+                                            <span t-field="o.payment_term"/>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>CURRENCY</th>
+                                        <td>
+                                            :
+                                            <span t-field="o.currency_id.name"/>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                        <div>
+                            <table class="table1 table-condensed"
+                                   style="font-size: 12px;table-layout: fixed; page-break-inside:auto; width:100%; border-top:1px solid black;">
+                                <thead>
+                                    <tr>
+                                        <th class="text-center"
+                                            style="width:7%;font-size: 12px;vertical-align:middle;">
+                                            ITEM NO.
+                                        </th>
+                                        <th class="text-center"
+                                            style="width:14%;font-size: 12px;vertical-align:middle;">
+                                            COUNTRY OF ORIGIN
+                                        </th>
+                                        <th class="text-center"
+                                            style="width:28%;font-size: 12px;vertical-align:middle;">
+                                            DESCRIPTION
+                                        </th>
+                                        <th class="text-center"
+                                            style="width:8%;font-size: 12px;vertical-align:middle;">
+                                            QTY
+                                        </th>
+                                        <th class="text-center"
+                                            style="width:11%;font-size: 12px;vertical-align:middle;">
+                                            PACKAGE (CTN)
+                                        </th>
+                                        <th class="text-center"
+                                            style="width:10%;font-size: 12px;vertical-align:middle;">
+                                            NET WEIGHT (Kg)
+                                        </th>
+                                        <th class="text-center"
+                                            style="width:10%;font-size: 12px;vertical-align:middle;">
+                                            CTN        REF NO
+                                        </th>
+                                        <th class="text-center"
+                                            style="width:12%;font-size: 12px;vertical-align:middle;">
+                                            PALLET     REF NO
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody class="invoice_tbody">
+                                    <t t-set="i" t-value="0"/>
+                                    <tr t-foreach="o.order_line" t-as="l"
+                                        style="page-break-inside: avoid; page-break-after : always; page-break-before : always; white-space: nowrap;">
+                                        <t t-set="i" t-value="i+1"/>
+
+                                        <td class="text-center"
+                                            style="width:5%; vertical-align:top;padding-bottom: 1em;">
+                                            <span t-esc="i"/>
+                                        </td>
+
+                                        <td class="text-center"
+                                            style="width:15%;vertical-align:top;padding-bottom: 1em;">
+                                            <span t-field="l.product_id.country_of_origin"/>
+                                        </td>
+
+                                        <td class="text-center"
+                                            style="width:30%;vertical-align:top;padding-bottom: 1em;">
+                                            <span t-field="l.product_id.name"/>
+                                        </td>
+
+                                        <td class="text-center"
+                                            style="width:8%;vertical-align:top;padding-bottom: 1em;">
+                                            <span t-field="l.product_uom_qty"/>
+                                        </td>
+
+                                        <td class="text-center"
+                                            style="width:10%;vertical-align:top;padding-bottom: 1em;">
+                                            <span t-field="l.product_packaging"/>
+                                        </td>
+
+                                        <td class="text-center"
+                                            style="width:10%;vertical-align:top;padding-bottom: 1em; ">
+                                            <span t-field="l.product_id.weight_net"/>
+                                        </td>
+
+                                        <td class="text-center"
+                                            style="width:10%;vertical-align:top;padding-bottom: 1em; ">
+                                        </td>
+
+                                        <td class="text-center"
+                                            style="width:12%;vertical-align:top;padding-bottom: 1em; ">
+                                        </td>
+
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </t>
+            </xpath>
+        </template>
+    </data>
+</openerp>
